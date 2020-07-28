@@ -6,9 +6,10 @@ const fs = require("fs");
 const path = require("path");
 
 const port = 3000;
-const messagesArr = [];
-const audioArr = [];
-const imageArr = [];
+let messagesArr = [];
+let audioArr = [];
+let imageArr = [];
+let videoArr = [];
 
 app.use(bodyParse.json());
 app.use(bodyParse.urlencoded({
@@ -46,7 +47,7 @@ app.get("/media/images", (req, res) => {
             }
 
             files.forEach(file => {
-                const fileLocale = dir + file;
+                let fileLocale = dir + file;
                 console.log(fileLocale);
 
                 fs.readFile(fileLocale, (err, fileData) => {
@@ -67,9 +68,9 @@ app.get("/media/images", (req, res) => {
                 });
 
             });
-            res.send(imageArr)
-
+            
         });
+        res.send(imageArr)
     } catch (error) {
         console.log('Error when reading directory ->', error);
     }
