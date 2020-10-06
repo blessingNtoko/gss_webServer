@@ -41,36 +41,44 @@ app.get("/media/images", (req, res) => {
     try {
         let temp = {};
 
-        fs.readdir(dir, (err, files) => {
-            if (err) {
-                console.log('Error in getting image ->', err);
-            }
+        if (imageArr.length === 0) {
+            fs.readdir(dir, (err, files) => {
+                if (err) {
+                    console.log('Error in getting image ->', err);
+                }
 
-            files.forEach(file => {
-                let fileLocale = dir + file;
-                console.log(fileLocale);
+                files.forEach(file => {
+                    let fileLocale = dir + file;
+                    console.log(fileLocale);
 
-                fs.readFile(fileLocale, (err, fileData) => {
-                    if (err) {
-                        console.log('Error in getting image ->', err);
-                    }
+                    fs.readFile(fileLocale, (err, fileData) => {
+                        if (err) {
+                            console.log('Error in getting image ->', err);
+                        }
 
-                    let extName = path.extname(`${dir}/${file}`)
-                    let buff = Buffer.from(fileData, "binary");
-                    let base64Image = buff.toString("base64");
-                    let imgString = `data:image/${extName.split('.').pop()};base64,${base64Image}`;
+                        let extName = path.extname(`${dir}/${file}`)
+                        console.log(extName);
+                        let buff = Buffer.from(fileData, "binary");
+                        let base64Image = buff.toString("base64");
+                        let imgString = `data:image/${extName.split('.').pop()};base64,${base64Image}`;
 
-                    temp['type'] = 'image'
-                    temp['data'] = imgString
-    
-                    imageArr.push(temp)
+                        temp['type'] = 'image'
+                        temp['data'] = imgString
+
+                        imageArr.push(temp)
+
+                    });
 
                 });
 
             });
-            
-        });
-        res.send(imageArr)
+            res.send(imageArr)
+        } else {
+            console.log(imageArr[0]['type'])
+            res.send(imageArr);
+
+        }
+
     } catch (error) {
         console.log('Error when reading directory ->', error);
     }
