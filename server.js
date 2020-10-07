@@ -1,15 +1,14 @@
-const express = require("express");
-const app = express();
-const https = require("https");
+const app = require("express")();
+const http = require("http").createServer(app);
 const bodyParse = require("body-parser");
 const fs = require("fs");
 const path = require("path");
+const io = require('socket.io')(http);
 
 const port = 3000;
 let messagesArr = [];
-let audioArr = [];
-let imageArr = [];
-let videoArr = [];
+// let imageArr = [];
+// let videoArr = [];
 
 app.use(bodyParse.json());
 app.use(bodyParse.urlencoded({
@@ -34,13 +33,19 @@ app.post("/contact", (req, res) => {
     console.log('Message array ->', messagesArr);
 });
 
-app.get("/media/images", (req, res) => {
-    const dir = './media/images/';
-    let temp = {};
+app.post("/donate", (req, res) => {
 
-    try {
+});
 
-        if (imageArr.length === 0) {
+io.on("connection", socket => {
+    console.log("a user has connected");
+
+    socket.on("imagesPls", () => {
+        const dir = './media/images/';
+        let temp = {};
+
+        try {
+
             fs.readdir(dir, (err, files) => {
                 if (err) {
                     console.log('Error in getting image ->', err);
@@ -50,50 +55,36 @@ app.get("/media/images", (req, res) => {
 
                 files.forEach(file => {
                     let fileLocale = dir + file;
-                    console.log("File Location ->", fileLocale);
 
-                    fs.readFile(fileLocale, (err, fileData) => {
-                        if (err) {
-                            console.log('Error in getting image ->', err);
-                        }
+                    let rawData = fs.readFileSync(fileLocale);
+                    let extName = path.extname(`${fileLocale}`);
+                    let buff = Buffer.from(rawData, "binary").toString("base64");
+                    let imgString = `data:image/${extName.split('.').pop()};base64,${buff}`;
 
-                        let extName = path.extname(`${fileLocale}`);
-                        console.log(extName);
-                        let buff = Buffer.from(fileData, "binary").toString("base64");
-                        // let base64Image = buff.toString("base64");
-                        let imgString = `data:image/${extName.split('.').pop()};base64,${buff}`;
+                    temp['type'] = 'image';
+                    temp['data'] = imgString;
 
-                        temp['type'] = 'image';
-                        temp['data'] = imgString;
-
-                        imageArr.push(temp);
-
-                    });
-
+                    io.emit("gotImages", temp);
                 });
 
-                res.send(imageArr);
             });
-        } else {
-            // console.log(imageArr[0])
-            res.send(imageArr);
 
+        } catch (error) {
+            console.log('Error when reading directory ->', error);
         }
+    });
 
-    } catch (error) {
-        console.log('Error when reading directory ->', error);
-    }
+    socket.on("audiosPls", () => {
+        const dir = './media/audio/';
+        let temp = {};
+    });
 
+    socket.on("videosPls", () => {
+        const dir = './media/video/';
+        let temp = {};
+    });
 });
 
-app.get("/media/audio", (req, res) => {
-    console.log('Get audio ->', req.body);
-});
-
-app.get("/media/video", (req, res) => {
-    console.log('Get video ->', req.body);
-});
-
-app.listen(port, () => {
+http.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
