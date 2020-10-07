@@ -35,11 +35,10 @@ app.post("/contact", (req, res) => {
 });
 
 app.get("/media/images", (req, res) => {
-    console.log('Get images ->', req.body);
     const dir = './media/images/';
+    let temp = {};
 
     try {
-        let temp = {};
 
         if (imageArr.length === 0) {
             fs.readdir(dir, (err, files) => {
@@ -47,34 +46,36 @@ app.get("/media/images", (req, res) => {
                     console.log('Error in getting image ->', err);
                 }
 
+                console.log("Files ->", files);
+
                 files.forEach(file => {
                     let fileLocale = dir + file;
-                    console.log(fileLocale);
+                    console.log("File Location ->", fileLocale);
 
                     fs.readFile(fileLocale, (err, fileData) => {
                         if (err) {
                             console.log('Error in getting image ->', err);
                         }
 
-                        let extName = path.extname(`${dir}/${file}`)
+                        let extName = path.extname(`${fileLocale}`);
                         console.log(extName);
-                        let buff = Buffer.from(fileData, "binary");
-                        let base64Image = buff.toString("base64");
-                        let imgString = `data:image/${extName.split('.').pop()};base64,${base64Image}`;
+                        let buff = Buffer.from(fileData, "binary").toString("base64");
+                        // let base64Image = buff.toString("base64");
+                        let imgString = `data:image/${extName.split('.').pop()};base64,${buff}`;
 
-                        temp['type'] = 'image'
-                        temp['data'] = imgString
+                        temp['type'] = 'image';
+                        temp['data'] = imgString;
 
-                        imageArr.push(temp)
+                        imageArr.push(temp);
 
                     });
 
                 });
 
+                res.send(imageArr);
             });
-            res.send(imageArr)
         } else {
-            console.log(imageArr[0]['type'])
+            // console.log(imageArr[0])
             res.send(imageArr);
 
         }
