@@ -56,15 +56,21 @@ io.on("connection", socket => {
                 files.forEach(file => {
                     let fileLocale = dir + file;
 
-                    let rawData = fs.readFileSync(fileLocale);
-                    let extName = path.extname(`${fileLocale}`);
-                    let buff = Buffer.from(rawData, "binary").toString("base64");
-                    let imgString = `data:image/${extName.split('.').pop()};base64,${buff}`;
+                    let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
 
-                    temp['type'] = 'image';
-                    temp['data'] = imgString;
+                    rawStream.on("data", chunk => {
+                        // console.log("Chunk of data ->", chunk);
+                        io.emit("gotImages", chunk);
+                    });
 
-                    io.emit("gotImages", temp);
+                    rawStream.on("end", () => {
+                        io.emit("gotImages", "Done");
+                    });
+
+                    rawStream.on("error", err => {
+                        console.error("Error has occured when reading file for stream ->", err);
+                    });
+
                 });
 
             });
