@@ -8,8 +8,6 @@ const io = require('socket.io')(http);
 const port = 3000;
 let messagesArr = [];
 let donateArr = [];
-// let imageArr = [];
-// let videoArr = [];
 
 app.use(bodyParse.json());
 app.use(bodyParse.urlencoded({
@@ -49,7 +47,7 @@ io.on("connection", socket => {
 
     socket.on("imagesPls", () => {
         const dir = './media/images/';
-        let temp = {};
+        let imgObj = {};
 
         try {
 
@@ -58,29 +56,29 @@ io.on("connection", socket => {
                     console.log('Error in getting image ->', err);
                 }
 
-                console.log("Files ->", files);
+                try {
+                    files.forEach(file => {
+                        let fileLocale = dir + file;
 
-                files.forEach(file => {
-                    let fileLocale = dir + file;
+                        fs.readFile(fileLocale, (err, fileData) => {
+                            if (err) {
+                                console.error("Error when reading file ->", err);
+                            }
 
-                    fs.readFile(fileLocale, (err, fileData) => {
-                        if (err) {
-                            console.error("Error when reading file ->", err);
-                        }
+                            let extName = path.extname(fileLocale);
+                            let buff64 = Buffer.from(fileData, "binary").toString("base64");
+                            let imgString = `data:image/${extName.split(".").pop()};base64,${buff64}`;
 
-                        let extName = path.extname(fileLocale);
-                        let buff64 = Buffer.from(fileData, "binary").toString("base64");
-                        let imgString = `data:image/${extName.split(".").pop()};base64,${buff64}`;
+                            imgObj["type"] = "image";
+                            imgObj["data"] = imgString;
 
-                        temp["type"] = "image";
-                        temp["data"] = imgString;
+                            io.emit("gotImages", imgObj);
+                        });
 
-                        io.emit("gotImages", temp);
                     });
-
-
-
-                });
+                } catch (error) {
+                    console.error("Error in loop ->", error);
+                }
 
             });
 
@@ -93,15 +91,17 @@ io.on("connection", socket => {
         const dir = './media/audio/';
         let temp = {};
 
-        let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
+        let rawStream = fs.createReadStream(fileLocale, {
+            highWaterMark: 4096
+        });
 
         rawStream.on("data", chunk => {
             // console.log("Chunk of data ->", chunk);
-            io.emit("gotImages", chunk);
+            io.emit("gotAudio", chunk);
         });
 
         rawStream.on("end", () => {
-            io.emit("gotImages", "Done");
+            io.emit("gotAudio", "Done");
         });
 
         rawStream.on("error", err => {
@@ -113,15 +113,17 @@ io.on("connection", socket => {
         const dir = './media/video/';
         let temp = {};
 
-        let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
+        let rawStream = fs.createReadStream(fileLocale, {
+            highWaterMark: 4096
+        });
 
         rawStream.on("data", chunk => {
             // console.log("Chunk of data ->", chunk);
-            io.emit("gotImages", chunk);
+            io.emit("gotVideo", chunk);
         });
 
         rawStream.on("end", () => {
-            io.emit("gotImages", "Done");
+            io.emit("gotAudio", "Done");
         });
 
         rawStream.on("error", err => {
