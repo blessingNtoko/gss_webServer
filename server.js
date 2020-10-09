@@ -7,6 +7,7 @@ const io = require('socket.io')(http);
 
 const port = 3000;
 let messagesArr = [];
+let donateArr = [];
 // let imageArr = [];
 // let videoArr = [];
 
@@ -24,9 +25,8 @@ app.use((req, res, next) => {
 app.post("/contact", (req, res) => {
     const msgData = req.body['data'];
 
-    const buff = Buffer.from(msgData, "base64");
-    let fromBase = buff.toString('utf-8');
-    let fromJSON = JSON.parse(fromBase);
+    const buffFromBase = Buffer.from(msgData, "base64").toString('utf-8');
+    let fromJSON = JSON.parse(buffFromBase);
 
     messagesArr.push(fromJSON);
 
@@ -34,7 +34,14 @@ app.post("/contact", (req, res) => {
 });
 
 app.post("/donate", (req, res) => {
+    const donateData = req.body['data'];
 
+    const buffFromBase = Buffer.from(donateData, "base64").toString('utf-8');
+    let fromJSON = JSON.parse(buffFromBase);
+
+    donateArr.push(fromJSON);
+
+    console.log('Message array ->', messagesArr);
 });
 
 io.on("connection", socket => {
@@ -56,20 +63,22 @@ io.on("connection", socket => {
                 files.forEach(file => {
                     let fileLocale = dir + file;
 
-                    let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
+                    fs.readFile(fileLocale, (err, fileData) => {
+                        if (err) {
+                            console.error("Error when reading file ->", err);
+                        }
 
-                    rawStream.on("data", chunk => {
-                        // console.log("Chunk of data ->", chunk);
-                        io.emit("gotImages", chunk);
+                        let extName = path.extname(fileLocale);
+                        let buff64 = Buffer.from(fileData, "binary").toString("base64");
+                        let imgString = `data:image/${extName.split(".").pop()};base64,${buff64}`;
+
+                        temp["type"] = "image";
+                        temp["data"] = imgString;
+
+                        io.emit("gotImages", temp);
                     });
 
-                    rawStream.on("end", () => {
-                        io.emit("gotImages", "Done");
-                    });
 
-                    rawStream.on("error", err => {
-                        console.error("Error has occured when reading file for stream ->", err);
-                    });
 
                 });
 
@@ -80,14 +89,44 @@ io.on("connection", socket => {
         }
     });
 
-    socket.on("audiosPls", () => {
+    socket.on("audiosPls", audioClip => {
         const dir = './media/audio/';
         let temp = {};
+
+        let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
+
+        rawStream.on("data", chunk => {
+            // console.log("Chunk of data ->", chunk);
+            io.emit("gotImages", chunk);
+        });
+
+        rawStream.on("end", () => {
+            io.emit("gotImages", "Done");
+        });
+
+        rawStream.on("error", err => {
+            console.error("Error has occured when reading file for stream ->", err);
+        });
     });
 
-    socket.on("videosPls", () => {
+    socket.on("videosPls", videoClip => {
         const dir = './media/video/';
         let temp = {};
+
+        let rawStream = fs.createReadStream(fileLocale, { highWaterMark: 4096 });
+
+        rawStream.on("data", chunk => {
+            // console.log("Chunk of data ->", chunk);
+            io.emit("gotImages", chunk);
+        });
+
+        rawStream.on("end", () => {
+            io.emit("gotImages", "Done");
+        });
+
+        rawStream.on("error", err => {
+            console.error("Error has occured when reading file for stream ->", err);
+        });
     });
 });
 
