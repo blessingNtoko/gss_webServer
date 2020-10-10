@@ -94,9 +94,11 @@ io.on("connection", socket => {
         let audioObj = {};
         audioObj["uid"] = audioClip.uid;
 
-        if (audioClip.data) {
+        if (audioClip["data"]) {
+            console.log("audioClip['data'] ->", audioClip["data"]);
 
-            let audioLocale = dir + audioClip.data;
+            let audioLocale = dir + audioClip["data"];
+            console.log("audioLocale ->", audioLocale);
 
             let rawStream = fs.createReadStream(audioLocale, {
                 highWaterMark: 4096
@@ -118,17 +120,20 @@ io.on("connection", socket => {
             rawStream.on("error", err => {
                 console.error("Error has occured when reading file for stream ->", err);
             });
+        } else {
+
+            fs.readdir(dir, (err, files) => {
+                if (err) {
+                    console.error("Error when reading directory ->", err);
+                }
+    
+                audioObj["files"] = files;
+                console.log("Files ->", files);
+    
+                io.emit("audioChunk", audioObj);
+            });
         }
 
-        fs.readdir(dir, (err, files) => {
-            if (err) {
-                console.error("Error when reading directory ->", err);
-            }
-
-            audioObj["files"] = files;
-
-            io.emit("audioChunk", audioObj);
-        });
 
 
     });
@@ -148,7 +153,7 @@ io.on("connection", socket => {
             rawStream.on("data", chunk => {
                 // console.log("Chunk of data ->", chunk);
                 videoObj["data"] = chunk;
-                
+
                 io.emit("videoChunk", chunk);
             });
     
@@ -170,7 +175,7 @@ io.on("connection", socket => {
 
             videoObj["files"] = files;
 
-            io.emit(videoChunk, videoObj);
+            io.emit("videoChunk", videoObj);
         });
 
     });
