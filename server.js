@@ -72,7 +72,7 @@ io.on("connection", socket => {
 
                             imgObj["type"] = "image";
                             imgObj["data"] = imgString;
-                            imgObj["uid"] = data.uid;
+                            imgObj["uid"] = data["uid"];
 
                             io.emit("images", imgObj);
                         });
