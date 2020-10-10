@@ -150,42 +150,58 @@ io.on("connection", socket => {
     socket.on("video", videoClip => {
         const dir = './media/video/';
         let videoObj = {};
-        videoObj["uid"] = videoClip.uid;
 
-        if (videoClip.data) {
-            let videoLocale = dir + videoClip.data;
+        if (videoClip["uid"]) {
+            videoObj["uid"] = videoClip["uid"];
+            console.log("Unique ID ->", videoObj["uid"]);
 
-            let rawStream = fs.createReadStream(videoLocale, {
-                highWaterMark: 4096
-            });
+            if (videoClip["data"]) {
+                console.log("videoClip['data'] ->", videoClip["data"]);
+                try {
 
-            rawStream.on("data", chunk => {
-                // console.log("Chunk of data ->", chunk);
-                videoObj["data"] = chunk;
+                    let videoLocale = dir + videoClip["data"];
+                    console.log("videoLocale ->", videoLocale);
 
-                io.emit("videoChunk", chunk);
-            });
+                    let rawStream = fs.createReadStream(videoLocale, {
+                        highWaterMark: 4096
+                    });
 
-            rawStream.on("end", () => {
-                videoObj["data"] = "Done";
+                    rawStream.on("data", chunk => {
+                        // console.log("Chunk of data ->", chunk);
+                        videoObj["data"] = chunk;
 
-                io.emit("videoChunk", videoObj);
-            });
+                        io.emit("videoChunk", videoObj);
+                    });
 
-            rawStream.on("error", err => {
-                console.error("Error has occured when reading file for stream ->", err);
-            });
-        }
+                    rawStream.on("end", () => {
+                        videoObj["data"] = "Done";
 
-        fs.readdir(dir, (err, files) => {
-            if (err) {
-                console.error("Error when reading directory ->", err);
+                        io.emit("videoChunk", videoObj);
+                    });
+
+                    rawStream.on("error", err => {
+                        console.error("Error has occured when reading file for stream ->", err);
+                    });
+                } catch (error) {
+                    console.error("Error when attempting to stream data ->", error);
+                }
+            } else {
+                try {
+                    fs.readdir(dir, (err, files) => {
+                        if (err) {
+                            console.error("Error when reading directory ->", err);
+                        }
+
+                        videoObj["files"] = files;
+                        console.log("Files ->", videoObj);
+
+                        io.emit("videoChunk", videoObj);
+                    });
+                } catch (error) {
+                    console.error("Error when reading directory ->", error);
+                }
             }
-
-            videoObj["files"] = files;
-
-            io.emit("videoChunk", videoObj);
-        });
+        }
 
     });
 });
