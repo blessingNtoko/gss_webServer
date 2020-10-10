@@ -45,7 +45,7 @@ app.post("/donate", (req, res) => {
 io.on("connection", socket => {
     console.log("a user has connected");
 
-    socket.on("imagesPls", () => {
+    socket.on("images", () => {
         const dir = './media/images/';
         let imgObj = {};
 
@@ -72,7 +72,7 @@ io.on("connection", socket => {
                             imgObj["type"] = "image";
                             imgObj["data"] = imgString;
 
-                            io.emit("gotImages", imgObj);
+                            io.emit("images", imgObj);
                         });
 
                     });
@@ -87,48 +87,76 @@ io.on("connection", socket => {
         }
     });
 
-    socket.on("audiosPls", audioClip => {
+    socket.on("audio", audioClip => {
         const dir = './media/audio/';
         let temp = {};
 
-        let rawStream = fs.createReadStream(fileLocale, {
-            highWaterMark: 4096
+        if (audioClip) {
+
+            let audioLocale = dir + audioClip;
+
+            let rawStream = fs.createReadStream(audioLocale, {
+                highWaterMark: 4096
+            });
+
+            rawStream.on("data", chunk => {
+                // console.log("Chunk of data ->", chunk);
+                io.emit("audioChunk", chunk);
+            });
+
+            rawStream.on("end", () => {
+                io.emit("audioChunk", "Done");
+            });
+
+            rawStream.on("error", err => {
+                console.error("Error has occured when reading file for stream ->", err);
+            });
+        }
+
+        fs.readdir(dir, (err, files) => {
+            if (err) {
+                console.error("Error when reading directory ->", err);
+            }
+
+            io.emit("audioChunk", files);
         });
 
-        rawStream.on("data", chunk => {
-            // console.log("Chunk of data ->", chunk);
-            io.emit("gotAudio", chunk);
-        });
 
-        rawStream.on("end", () => {
-            io.emit("gotAudio", "Done");
-        });
-
-        rawStream.on("error", err => {
-            console.error("Error has occured when reading file for stream ->", err);
-        });
     });
 
-    socket.on("videosPls", videoClip => {
+    socket.on("video", videoClip => {
         const dir = './media/video/';
         let temp = {};
 
-        let rawStream = fs.createReadStream(fileLocale, {
-            highWaterMark: 4096
+        if (videoClip) {
+            let videoLocale = dir + videoClip;
+
+            let rawStream = fs.createReadStream(videoLocale, {
+                highWaterMark: 4096
+            });
+    
+            rawStream.on("data", chunk => {
+                // console.log("Chunk of data ->", chunk);
+                io.emit("videoChunk", chunk);
+            });
+    
+            rawStream.on("end", () => {
+                io.emit("videoChunk", "Done");
+            });
+    
+            rawStream.on("error", err => {
+                console.error("Error has occured when reading file for stream ->", err);
+            });
+        }
+
+        fs.readdir(dir, (err, files) => {
+            if (err) {
+                console.error("Error when reading directory ->", err);
+            }
+
+            io.emit(videoChunk, files);
         });
 
-        rawStream.on("data", chunk => {
-            // console.log("Chunk of data ->", chunk);
-            io.emit("gotVideo", chunk);
-        });
-
-        rawStream.on("end", () => {
-            io.emit("gotAudio", "Done");
-        });
-
-        rawStream.on("error", err => {
-            console.error("Error has occured when reading file for stream ->", err);
-        });
     });
 });
 
