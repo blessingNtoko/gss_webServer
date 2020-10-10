@@ -39,7 +39,7 @@ app.post("/donate", (req, res) => {
 
     donateArr.push(fromJSON);
 
-    console.log('Message array ->', messagesArr);
+    console.log('Donate array ->', donateArr);
 });
 
 io.on("connection", socket => {
