@@ -163,7 +163,7 @@ io.on("connection", socket => {
                     console.log("videoLocale ->", videoLocale);
 
                     let rawStream = fs.createReadStream(videoLocale, {
-                        highWaterMark: 480000
+                        highWaterMark: 120000
                     });
 
                     rawStream.on("data", chunk => {
