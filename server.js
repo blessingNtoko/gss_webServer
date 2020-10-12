@@ -169,7 +169,7 @@ io.on("connection", socket => {
                     rawStream.on("data", chunk => {
                         // console.log("Chunk of data ->", chunk);
                         videoObj["data"] = chunk;
-
+                        
                         io.emit("videoChunk", videoObj);
                     });
 
