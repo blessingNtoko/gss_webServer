@@ -60,22 +60,26 @@ io.on("connection", socket => {
                 try {
                     files.forEach(file => {
                         let fileLocale = dir + file;
-
-                        fs.readFile(fileLocale, (err, fileData) => {
-                            if (err) {
-                                console.error("Error when reading file ->", err);
-                            }
-
-                            let extName = path.extname(fileLocale);
-                            let buff64 = Buffer.from(fileData, "binary").toString("base64");
-                            let imgString = `data:image/${extName.split(".").pop()};base64,${buff64}`;
-
-                            imgObj["type"] = "image";
-                            imgObj["data"] = imgString;
-                            imgObj["uid"] = data["uid"];
-
-                            io.emit("images", imgObj);
-                        });
+                        try {
+                            
+                            fs.readFile(fileLocale, (err, fileData) => {
+                                if (err) {
+                                    console.error("Error when reading file ->", err);
+                                }
+    
+                                let extName = path.extname(fileLocale);
+                                let buff64 = Buffer.from(fileData, "binary").toString("base64");
+                                let imgString = `data:image/${extName.split(".").pop()};base64,${buff64}`;
+    
+                                imgObj["type"] = "image";
+                                imgObj["data"] = imgString;
+                                imgObj["uid"] = data["uid"];
+    
+                                io.emit("images", imgObj);
+                            });
+                        } catch (error) {
+                            console.error("Error when reading file ->", error);
+                        }
 
                     });
                 } catch (error) {
@@ -89,121 +93,6 @@ io.on("connection", socket => {
         }
     });
 
-    socket.on("audio", audioClip => {
-        const dir = './media/audio/';
-        let audioObj = {};
-
-        if (audioClip["uid"]) {
-            audioObj["uid"] = audioClip["uid"];
-            console.log("Unique ID ->", audioObj["uid"]);
-
-            if (audioClip["data"]) {
-                console.log("audioClip['data'] ->", audioClip["data"]);
-                try {
-
-                    let audioLocale = dir + audioClip["data"];
-                    console.log("audioLocale ->", audioLocale);
-
-                    let rawStream = fs.createReadStream(audioLocale, {
-                        highWaterMark: 4096
-                    });
-
-                    rawStream.on("data", chunk => {
-                        // console.log("Chunk of data ->", chunk);
-                        audioObj["data"] = chunk;
-
-                        io.emit("audioChunk", audioObj);
-                    });
-
-                    rawStream.on("end", () => {
-                        audioObj["data"] = "Done";
-
-                        io.emit("audioChunk", audioObj);
-                    });
-
-                    rawStream.on("error", err => {
-                        console.error("Error has occured when reading file for stream ->", err);
-                    });
-                } catch (error) {
-                    console.error("Error when attempting to stream data ->", error);
-                }
-            } else {
-                try {
-                    fs.readdir(dir, (err, files) => {
-                        if (err) {
-                            console.error("Error when reading directory ->", err);
-                        }
-
-                        audioObj["files"] = files;
-                        console.log("Files ->", audioObj);
-
-                        io.emit("audioChunk", audioObj);
-                    });
-                } catch (error) {
-                    console.error("Error when reading directory ->", error);
-                }
-            }
-        }
-
-    });
-
-    socket.on("video", videoClip => {
-        const dir = './media/video/';
-        let videoObj = {};
-
-        if (videoClip["uid"]) {
-            videoObj["uid"] = videoClip["uid"];
-            console.log("Unique ID ->", videoObj["uid"]);
-
-            if (videoClip["data"]) {
-                console.log("videoClip['data'] ->", videoClip["data"]);
-                try {
-
-                    let videoLocale = dir + videoClip["data"];
-                    console.log("videoLocale ->", videoLocale);
-
-                    let rawStream = fs.createReadStream(videoLocale, {
-                        highWaterMark: 120000
-                    });
-
-                    rawStream.on("data", chunk => {
-                        // console.log("Chunk of data ->", chunk);
-                        videoObj["data"] = chunk;
-                        
-                        io.emit("videoChunk", videoObj);
-                    });
-
-                    rawStream.on("end", () => {
-                        videoObj["data"] = "Done";
-
-                        io.emit("videoChunk", videoObj);
-                    });
-
-                    rawStream.on("error", err => {
-                        console.error("Error has occured when reading file for stream ->", err);
-                    });
-                } catch (error) {
-                    console.error("Error when attempting to stream data ->", error);
-                }
-            } else {
-                try {
-                    fs.readdir(dir, (err, files) => {
-                        if (err) {
-                            console.error("Error when reading directory ->", err);
-                        }
-
-                        videoObj["files"] = files;
-                        console.log("Files ->", videoObj);
-
-                        io.emit("videoChunk", videoObj);
-                    });
-                } catch (error) {
-                    console.error("Error when reading directory ->", error);
-                }
-            }
-        }
-
-    });
 });
 
 http.listen(port, () => {
